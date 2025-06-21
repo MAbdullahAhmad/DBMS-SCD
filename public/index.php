@@ -1,11 +1,13 @@
 <?php
 
+define('ROOT_DIR', dirname(__DIR__));
+
 // Display errors
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-require __DIR__ . '/../autoload.php';
-$routes = require_once __DIR__ . '/../app/routes.php';
+require ROOT_DIR . '/autoload.php';
+$routes = require_once ROOT_DIR . '/app/routes.php';
 
 use Core\Router;
 

@@ -6,8 +6,8 @@
 
 spl_autoload_register(function ($class) {
   $map = [
-      'Core\\' => __DIR__ . '/core/',
-      'App\\'  => __DIR__ . '/app/',
+      'Core\\' => ROOT_DIR . '/core/',
+      'App\\'  => ROOT_DIR . '/app/',
   ];
 
   foreach ($map as $prefix => $dir) {
@@ -25,7 +25,7 @@ spl_autoload_register(function ($class) {
 // Load utility files (excluding globals* first)
 // ----------
 
-$utils = glob(__DIR__ . '/core/util/' . '*.php');
+$utils = glob(ROOT_DIR . '/core/util/' . '*.php');
 
 // First: load all files except those starting with "globals"
 foreach ($utils as $file) {
