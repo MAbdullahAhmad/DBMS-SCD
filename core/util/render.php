@@ -39,6 +39,11 @@ function render($view, $data = []) {
     $parsed = preg_replace('/@section\((.*?)\)/', '<?php section($1); ?>', $parsed);
     $parsed = preg_replace('/@endsection/', '<?php endsection(); ?>', $parsed);
     $parsed = preg_replace('/@place\((.*?)\)/', '<?php place($1); ?>', $parsed);
+    $parsed = preg_replace_callback('/@include\((.*?)\)/', function ($matches) use (&$render_view, $data) {
+      $included = trim($matches[1], '\'" ');
+      $included_path = resolve_view_path($included);
+      return $render_view($included_path, $data);
+    }, $parsed);
     $parsed = preg_replace('/{{\s*(.*?)\s*}}/', '<?= $$1 ?>', $parsed);
 
     // Inject variables and eval in local scope

@@ -1,6 +1,6 @@
-@layout('layouts.basic')
+@layout('layouts.guest')
 
-@section('content')
+<!-- @section('content')
   <h1>Welcome to PHP-DBMS</h1>
   <p>{{ message }}</p>
-@endsection
+@endsection -->
