@@ -39,3 +39,5 @@ foreach ($utils as $file) {
     require_once $file;
   }
 }
+
+require_once ROOT_DIR . '/core/util/globals.php';
