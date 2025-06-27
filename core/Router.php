@@ -2,6 +2,7 @@
 
 namespace Core;
 use function Core\Util\render;
+use function Core\Util\config;
 
 class Router {
 
@@ -52,26 +53,46 @@ class Router {
         
         // Run middleware(s)
         if (!empty($route['middleware'])) {
-
           $middlewares = is_array($route['middleware']) ? $route['middleware'] : [$route['middleware']];
-          foreach ($middlewares as $mwClass) {
-            if (!class_exists($mwClass)) {
+          $handler = fn() => (new $route['controller'])->{$route['action']}();
+
+          foreach ($middlewares as $mwDef) {
+            if (is_string($mwDef)) {
+              // Alias with args, like 'auth:role=admin'
+              $explode = explode(':', $mwDef . ':');
+              [$alias, $params] = explode(':', $mwDef . ':');
+              $middlewareClass = config("middleware.aliases.$alias", '');
+              [$args, $kwargs] = $this->parseMiddlewareParams($params);
+            } elseif (is_array($mwDef)) {
+              $middlewareClass = $mwDef[0];
+              $args = $mwDef['args'] ?? [];
+              $kwargs = $mwDef['kwargs'] ?? [];
+            } else {
+              $middlewareClass = $mwDef;
+              $args = [];
+              $kwargs = [];
+            }
+
+            if (!class_exists($middlewareClass)) {
               $this->error(500);
-              echo "Middleware class not found: $mwClass";
+              echo "Middleware class not found: $middlewareClass in mwDef: $mwDef";
               return;
             }
 
-            $mw = new $mwClass();
-            if (!method_exists($mw, 'handle')) {
+            $middleware = new $middlewareClass();
+            if (!method_exists($middleware, 'handle')) {
               $this->error(500);
-              echo "Middleware method 'handle' not found in: $mwClass";
+              echo "Middleware missing handle method: $middlewareClass";
               return;
             }
 
-            $mw->handle();
+            $prevHandler = $handler;
+            $handler = fn() => $middleware->handle($prevHandler, ...$args, ...$kwargs);
           }
 
+          return $handler();
         }
+
 
         return (new $route['controller'])->{$route['action']}();
       }
@@ -135,6 +156,22 @@ class Router {
     } else {
       echo "Error $code";
     }
+  }
+
+  private function parseMiddlewareParams($paramStr) {
+    $args = [];
+    $kwargs = [];
+
+    foreach (explode(',', $paramStr) as $pair) {
+      if (str_contains($pair, '=')) {
+        [$k, $v] = explode('=', $pair);
+        $kwargs[trim($k)] = trim($v);
+      } elseif (trim($pair)) {
+        $args[] = trim($pair);
+      }
+    }
+
+    return [$args, $kwargs];
   }
 
 }

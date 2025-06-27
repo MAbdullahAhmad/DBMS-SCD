@@ -2,6 +2,9 @@
 
 namespace Core;
 
+use PDO;
+use PDOException;
+
 class DB {
 
   // ------
@@ -18,8 +21,8 @@ class DB {
   private function __construct() {
 
     // Credentials
-    $host     = env('DB_HOST', '127.0.0.1');
-    $name   = env('DB_NAME', '');
+    $host = env('DB_HOST', '127.0.0.1');
+    $name = env('DB_NAME', '');
     $user = env('DB_USER', '');
     $pass = env('DB_PASS', '');
 
