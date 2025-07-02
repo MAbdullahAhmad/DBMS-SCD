@@ -110,46 +110,102 @@ class Router {
   // Utility
   // -------
 
-  // flatten_routes nested route config into a flat list of routes
-  private function flatten_routes($routes, $prefix = '', $controller = null, $middleware = null) {
-    $flat = [];
+  // // flatten_routes nested route config into a flat list of routes
+  // private function flatten_routes($routes, $prefix = '', $controller = null, $middleware = null) {
+  //   $flat = [];
 
+  //   foreach ($routes as $r) {
+  //     $r = $this->parse_route($r);
+
+  //     // Group case
+  //     if (isset($r['routes'])) {
+  //       $subPrefix     = isset($r['prefix']) ? $prefix . $r['prefix'] : $prefix;
+  //       $subController = $r['controller'] ?? $controller;
+  //       $subMiddleware = $r['middleware'] ?? $middleware;
+
+  //       // Recursively flatten_routes
+  //       $flat = array_merge($flat, $this->flatten_routes($r['routes'], $subPrefix, $subController, $subMiddleware));
+  //     }
+
+  //     // Single route case
+  //     else {
+  //       [$method, $uri, $handler] = $r;
+  //       $routeController = $controller;
+  //       $action = $handler;
+
+  //       // Handle Controller@action format
+  //       if ($handler && (strpos($handler, '@') !== false)) {
+  //         [$routeController, $action] = explode('@', $handler);
+  //       }
+
+  //       // Add to flat list
+  //       $flat[] = [
+  //         'method'     => $method,
+  //         'uri'        => rtrim($prefix . $uri, '/') ?: '/',
+  //         'controller' => $routeController,
+  //         'action'     => $action,
+  //         'middleware' => $r[3] ?? $middleware,
+  //         'name'       => $r[4] ?? null,
+  //       ];
+  //     }
+  //   }
+
+  //   return $flat;
+  // }
+
+  private function flatten_routes($routes, $prefix = '', $controller = null, $middleware = []) {
+    $flat = [];
+  
     foreach ($routes as $r) {
       $r = $this->parse_route($r);
-
+  
       // Group case
-      if (isset($r['routes'])) {
-        $subPrefix     = isset($r['prefix']) ? $prefix . $r['prefix'] : $prefix;
+      if (isset($r['group'])) {
+        $subPrefix   = isset($r['prefix']) ? rtrim($prefix . '/' . trim($r['prefix'], '/'), '/') : $prefix;
         $subController = $r['controller'] ?? $controller;
-        $subMiddleware = $r['middleware'] ?? $middleware;
-
-        // Recursively flatten_routes
-        $flat = array_merge($flat, $this->flatten_routes($r['routes'], $subPrefix, $subController, $subMiddleware));
+  
+        // Merge middlewares (group + parent)
+        $groupMiddleware = $r['middleware'] ?? [];
+        $mergedMiddleware = array_merge(
+          is_array($middleware) ? $middleware : [$middleware],
+          is_array($groupMiddleware) ? $groupMiddleware : [$groupMiddleware]
+        );
+  
+        // Recurse
+        $flat = array_merge(
+          $flat,
+          $this->flatten_routes($r['group'], $subPrefix, $subController, $mergedMiddleware)
+        );
       }
-
+  
       // Single route case
       else {
         [$method, $uri, $handler] = $r;
         $routeController = $controller;
         $action = $handler;
-
-        // Handle Controller@action format
-        if (strpos($handler, '@') !== false) {
+  
+        if ($handler && strpos($handler, '@') !== false) {
           [$routeController, $action] = explode('@', $handler);
         }
-
-        // Add to flat list
+  
+        // Merge route middleware if defined
+        $routeMiddleware = $r[3] ?? [];
+        $finalMiddleware = array_merge(
+          is_array($middleware) ? $middleware : [$middleware],
+          is_array($routeMiddleware) ? $routeMiddleware : [$routeMiddleware]
+        );
+  
         $flat[] = [
-          'method'     => $method,
-          'uri'        => rtrim($prefix . $uri, '/') ?: '/',
+          'method'   => $method,
+          'uri'    => rtrim($prefix . '/' . trim($uri, '/'), '/') ?: '/',
           'controller' => $routeController,
-          'action'     => $action,
-          'middleware' => $r[3] ?? $middleware,
-          'name'       => $r[4] ?? null,
+          'action'   => $action,
+          'middleware' => $finalMiddleware,
+          'name'     => $r[4] ?? null,
         ];
       }
     }
-
+  
     return $flat;
   }
 
@@ -176,9 +232,14 @@ class Router {
       'prefix' => null,
     ];
 
-    if(!(array_key_exists('method', $route) or array_key_exists(0, $route))){
+    if(
+      !array_key_exists('group', $route) &&
+      !(array_key_exists('method', $route) || array_key_exists(0, $route))
+    ){
       throw new InvalidRouteDefinition("Key 'method' not found in route definition: " . json_encode($route));
     }
+
+    return $route;
   }
 
   private function parse_mw_params($paramStr) {
