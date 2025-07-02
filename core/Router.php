@@ -195,7 +195,7 @@ class Router {
    *
    * @return array                   Flat array of route definitions.
    */
-  private function flatten_routes($routes, $prefix = '', $controller = null, $middleware = []) {
+   private function flatten_routes($routes, $prefix = '', $controller = null, $middleware = [], $namePrefix = ''){
     $flat = [];
   
     foreach ($routes as $r) {
@@ -214,10 +214,13 @@ class Router {
         );
   
         // Recurse
+        $childNamePrefix = isset($r['name']) ? $namePrefix . $r['name'] : $namePrefix;
+
         $flat = array_merge(
           $flat,
-          $this->flatten_routes($r['group'], $subPrefix, $subController, $mergedMiddleware)
+          $this->flatten_routes($r['group'], $subPrefix, $subController, $mergedMiddleware, $childNamePrefix)
         );
+
       }
   
       // Single route case
@@ -243,7 +246,7 @@ class Router {
           'controller' => $routeController,
           'action'     => $action,
           'middleware' => $finalMiddleware,
-          'name'       => $r['name'] ?? ($r[4] ?? null),
+          'name' => isset($r['name']) ? $namePrefix . $r['name'] : ($namePrefix . ($r[4] ?? '')),
         ];
       }
     }

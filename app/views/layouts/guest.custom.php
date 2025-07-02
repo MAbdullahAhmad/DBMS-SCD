@@ -49,8 +49,11 @@
     @include('components.guest.download-cattr')
     @include('components.guest.testimonials')
   </div>
+  
+  @place('content')
 
   @include('components.guest.footer')
+
 
   <!-- Scripts -->
   <script src="/static/lib/material-kit/js/core/popper.min.js" type="text/javascript"></script>

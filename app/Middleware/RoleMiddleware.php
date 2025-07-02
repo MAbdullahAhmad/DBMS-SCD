@@ -3,52 +3,74 @@
 namespace App\Middleware;
 
 use Core\Middleware;
-use App\Models\User;
+use App\Models\Admin;
+use App\Models\Employee;
+use function Core\Util\redirect;
 
+/*
+ * RoleMiddleware checks if the user has the required role to access a route.
+ * Roles:
+ * - 'any'      → allows all
+ * - 'guest'    → only for unauthenticated users (no user_id in session)
+ * - 'admin'    → requires admin in sc_admins
+ * - 'employee' → requires employee in sc_employees
+ * Redirects to role-specific homepage on access violation.
+ */
 class RoleMiddleware extends Middleware {
 
-  public function handle($next, $role=null) {
+  /**
+   * Role-specific home pages.
+   * @var array
+   */
+  protected static $homepages = [
+    'admin'    => '/admin',
+    'employee' => '/employee',
+  ];
 
-    if ($role == 'any'){
+  public function handle($next, $role = 'any') {
+    $userId = $_SESSION['user_id'] ?? null;
+    $sessionRole = $_SESSION['role'] ?? null;
+
+    // Guest only
+    if ($role === 'guest') {
+      if ($userId && $sessionRole && isset(self::$homepages[$sessionRole])) {
+        return redirect(self::$homepages[$sessionRole]);
+      }
       return $next();
     }
 
-    $headers = getallheaders();
-    $auth = $headers['Authorization'] ?? null;
-
-    if (!$auth) {
-      http_response_code(401);
-      echo "Unauthorized: No Authorization token.";
-      return;
+    // Public
+    if ($role === 'any') {
+      return $next();
     }
 
+    // Required
+    if ($role === 'required') {
+      if (!$userId || !$sessionRole) {
+        return redirect('/login');
+      }
+      return $next();
+    }
+    
 
-    // $userModel = new User();
-    // $user = $userModel->findByToken($auth);
+    // Must be logged in for admin/employee
+    if (!$userId || !$sessionRole || $sessionRole !== $role) {
+      return redirect('/login');
+    }
 
-    // if (!$user) {
-    //   http_response_code(401);
-    //   echo "Unauthorized: Invalid token.";
-    //   return;
-    // }
-
-    $user = [
-      'role' => array_rand(['admin', 'user', 'guest']) // Simulating user role for demo
-    ];
+    $user = null;
+    if ($role === 'admin') {
+      $user = (new Admin())->find($userId);
+    } elseif ($role === 'employee') {
+      $user = (new Employee())->find($userId);
+    }
 
     if (!$user) {
       http_response_code(403);
-      echo "Forbidden: No user found with given token.";
-      return;
-    }
-
-    if (isset($role) && $user['role'] !== $role) {
-      http_response_code(403);
-      echo "Forbidden: Requires role {$role}.";
+      echo "Forbidden: Access denied for role '{$role}'.";
       return;
     }
 
     return $next();
   }
-  
 }
