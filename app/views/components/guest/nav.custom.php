@@ -1,3 +1,9 @@
+<?php
+
+// use function Core\Util\url;
+
+?>
+
 <!-- Navbar -->
 <div class="container position-sticky z-index-sticky top-0">
   <div class="row">
@@ -38,7 +44,7 @@
 
               <!-- Login -->
               <li class="nav-item my-auto ms-3 ms-lg-0">
-                <a href="/login" class="btn  bg-gradient-dark  mb-0 mt-2 mt-md-0">Login</a>
+                <a href="@route('test.id', 31)" class="btn  bg-gradient-dark  mb-0 mt-2 mt-md-0">Login</a>
               </li>
             </ul>
           </div>

@@ -33,12 +33,14 @@ function render($view, $data = []) {
   
     ob_start();
     require_once __DIR__ . '/globals_view.php';
-  
+    
     $parsed = file_get_contents($view_path);
     $parsed = preg_replace('/@layout\((.*?)\)/', '<?php layout($1); ?>', $parsed);
     $parsed = preg_replace('/@section\((.*?)\)/', '<?php section($1); ?>', $parsed);
     $parsed = preg_replace('/@endsection/', '<?php endsection(); ?>', $parsed);
     $parsed = preg_replace('/@place\((.*?)\)/', '<?php place($1); ?>', $parsed);
+    $parsed = preg_replace('/@url\((.*?)\)/', '<?= Core\Util\url($1); ?>', $parsed);
+    $parsed = preg_replace('/@route\((.*?)\)/', '<?= Core\Util\route($1); ?>', $parsed);
     $parsed = preg_replace_callback('/@include\((.*?)\)/', function ($matches) use (&$render_view, $data) {
       $included = trim($matches[1], '\'" ');
       $included_path = resolve_view_path($included);

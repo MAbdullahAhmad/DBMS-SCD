@@ -39,65 +39,67 @@ class Router {
     foreach ($this->routes as $route) {
 
       // Match method + URI
-      if ($route['method'] === $method && $route['uri'] === $uri) {
-        if (!class_exists($route['controller'])) {
-          $this->error(404);
-          echo "Controller class not found.";
-          return;
-        }
-        
-        $controller = new $route['controller']();
-        
-        if (!method_exists($controller, $route['action'])) {
-          $this->error(404);
-          echo "Method not found.";
-          return;
-        }
-        
-        // Run middleware(s)
-        if (!empty($route['middleware'])) {
-          $middlewares = is_array($route['middleware']) ? $route['middleware'] : [$route['middleware']];
-          $handler = fn() => (new $route['controller'])->{$route['action']}();
-
-          foreach ($middlewares as $mwDef) {
-            if (is_string($mwDef)) {
-              // Alias with args, like 'auth:role=admin'
-              $explode = explode(':', $mwDef . ':');
-              [$alias, $params] = explode(':', $mwDef . ':');
-              $middlewareClass = config("middleware.aliases.$alias", '');
-              [$args, $kwargs] = $this->parse_mw_params($params);
-            } elseif (is_array($mwDef)) {
-              $middlewareClass = $mwDef[0];
-              $args = $mwDef['args'] ?? [];
-              $kwargs = $mwDef['kwargs'] ?? [];
-            } else {
-              $middlewareClass = $mwDef;
-              $args = [];
-              $kwargs = [];
-            }
-
-            if (!class_exists($middlewareClass)) {
-              $this->error(500);
-              echo "Middleware class not found: $middlewareClass in mwDef: $mwDef";
-              return;
-            }
-
-            $middleware = new $middlewareClass();
-            if (!method_exists($middleware, 'handle')) {
-              $this->error(500);
-              echo "Middleware missing handle method: $middlewareClass";
-              return;
-            }
-
-            $prevHandler = $handler;
-            $handler = fn() => $middleware->handle($prevHandler, ...$args, ...$kwargs);
+      if ($route['method'] === $method) {
+        $pattern = preg_replace('#\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}#', '(?P<$1>[^/]+)', $route['uri']);
+        $pattern = "#^" . $pattern . "$#";
+      
+        if (preg_match($pattern, $uri, $matches)) {
+          $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+      
+          if (!class_exists($route['controller'])) {
+            $this->error(404); echo "Controller class not found."; return;
           }
+      
+          $controller = new $route['controller']();
+      
+          if (!method_exists($controller, $route['action'])) {
+            $this->error(404); echo "Method not found."; return;
+          }
+      
+          // Middleware handling remains same
+          if (!empty($route['middleware'])) {
+            $middlewares = is_array($route['middleware']) ? $route['middleware'] : [$route['middleware']];
+            $handler = fn() => $controller->{$route['action']}(...array_values($params));
+      
+            foreach ($middlewares as $mwDef) {
+              if (is_string($mwDef)) {
+                // Alias with args, like 'auth:role=admin'
+                $explode = explode(':', $mwDef . ':');
+                [$alias, $params] = explode(':', $mwDef . ':');
+                $middlewareClass = config("middleware.aliases.$alias", '');
+                [$args, $kwargs] = $this->parse_mw_params($params);
+              } elseif (is_array($mwDef)) {
+                $middlewareClass = $mwDef[0];
+                $args = $mwDef['args'] ?? [];
+                $kwargs = $mwDef['kwargs'] ?? [];
+              } else {
+                $middlewareClass = $mwDef;
+                $args = [];
+                $kwargs = [];
+              }
 
-          return $handler();
+              if (!class_exists($middlewareClass)) {
+                $this->error(500);
+                echo "Middleware class not found: $middlewareClass in mwDef: $mwDef";
+                return;
+              }
+
+              $middleware = new $middlewareClass();
+              if (!method_exists($middleware, 'handle')) {
+                $this->error(500);
+                echo "Middleware missing handle method: $middlewareClass";
+                return;
+              }
+
+              $prevHandler = $handler;
+              $handler = fn() => $middleware->handle($prevHandler, ...$args, ...$kwargs);
+            }
+
+            return $handler();
+          }
+      
+          return $controller->{$route['action']}(...array_values($params));
         }
-
-
-        return (new $route['controller'])->{$route['action']}();
       }
     }
 
@@ -106,52 +108,49 @@ class Router {
     echo "Route not found.";
   }
 
-  // -------
-  // Utility
-  // -------
+  // -----------------
+  // Getters / Setters
+  // -----------------
 
-  // // flatten_routes nested route config into a flat list of routes
-  // private function flatten_routes($routes, $prefix = '', $controller = null, $middleware = null) {
-  //   $flat = [];
+  public function getRouteUrl($name, $params = []) {
+    foreach ($this->routes as $route) {
+      if ($route['name'] === $name) {
+        $uri = $route['uri'];
+  
+        // Normalize params
+        if (!is_array($params)) {
+          $params = [$params];
+        }
+  
+        // Extract param names from URI
+        preg_match_all('/\{\{(.*?)\}\}/', $uri, $matches);
+        $paramNames = $matches[1];
+  
+        $replacements = [];
+  
+        // Handle associative or positional replacement
+        foreach ($paramNames as $index => $key) {
+          $replacements["{{{$key}}}"] = array_key_exists($key, $params)
+            ? $params[$key]
+            : ($params[$index] ?? '');
+        }
+  
+        $uri = strtr($uri, $replacements);
+  
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+  
+        return rtrim("$scheme://$host", '/') . '/' . ltrim($uri, '/');
+      }
+    }
+  
+    throw new \Exception("Route named '$name' not found.");
+  }
 
-  //   foreach ($routes as $r) {
-  //     $r = $this->parse_route($r);
 
-  //     // Group case
-  //     if (isset($r['routes'])) {
-  //       $subPrefix     = isset($r['prefix']) ? $prefix . $r['prefix'] : $prefix;
-  //       $subController = $r['controller'] ?? $controller;
-  //       $subMiddleware = $r['middleware'] ?? $middleware;
-
-  //       // Recursively flatten_routes
-  //       $flat = array_merge($flat, $this->flatten_routes($r['routes'], $subPrefix, $subController, $subMiddleware));
-  //     }
-
-  //     // Single route case
-  //     else {
-  //       [$method, $uri, $handler] = $r;
-  //       $routeController = $controller;
-  //       $action = $handler;
-
-  //       // Handle Controller@action format
-  //       if ($handler && (strpos($handler, '@') !== false)) {
-  //         [$routeController, $action] = explode('@', $handler);
-  //       }
-
-  //       // Add to flat list
-  //       $flat[] = [
-  //         'method'     => $method,
-  //         'uri'        => rtrim($prefix . $uri, '/') ?: '/',
-  //         'controller' => $routeController,
-  //         'action'     => $action,
-  //         'middleware' => $r[3] ?? $middleware,
-  //         'name'       => $r[4] ?? null,
-  //       ];
-  //     }
-  //   }
-
-  //   return $flat;
-  // }
+  // -----------------
+  // Utility & Private
+  // -----------------
 
   private function flatten_routes($routes, $prefix = '', $controller = null, $middleware = []) {
     $flat = [];
@@ -196,12 +195,12 @@ class Router {
         );
   
         $flat[] = [
-          'method'   => $method,
-          'uri'    => rtrim($prefix . '/' . trim($uri, '/'), '/') ?: '/',
+          'method'     => $method,
+          'uri'        => rtrim($prefix . '/' . trim($uri, '/'), '/') ?: '/',
           'controller' => $routeController,
-          'action'   => $action,
+          'action'     => $action,
           'middleware' => $finalMiddleware,
-          'name'     => $r[4] ?? null,
+          'name'       => $r['name'] ?? ($r[4] ?? null),
         ];
       }
     }
