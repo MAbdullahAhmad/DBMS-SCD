@@ -7,6 +7,15 @@ use Core\Exceptions\InvalidRouteDefinition;
 use function Core\Util\render;
 use function Core\Util\config;
 
+
+/**
+ * Router class for handling HTTP routing, middleware, and dispatching.
+ *
+ * Supports route grouping, nested middleware, URL parameter matching (e.g. {{id}}),
+ * and dynamic route URL generation.
+ *
+ * @package Core
+ */
 class Router {
 
   // ----------
@@ -21,6 +30,12 @@ class Router {
   // Constructor
   // -----------
 
+  /**
+   * Router constructor.
+   *
+   * @param array $config        Array of route definitions.
+   * @param array $error_pages   Optional array of custom error page views (by status code).
+   */
   public function __construct($config, $error_pages = []) {
     $this->routes = $this->flatten_routes($config);
     $this->error_pages = $error_pages;
@@ -31,7 +46,14 @@ class Router {
   // Dispatch
   // --------
 
-  // Main dispatcher: matches request to route and executes
+  /**
+   * Dispatches the current request to the appropriate controller action.
+   *
+   * Matches URI and method, resolves parameters, executes middleware stack, and calls action.
+   *
+   * @param string $uri    Request URI.
+   * @param string $method HTTP method (GET, POST, etc).
+   */
   public function dispatch($uri, $method) {
     $uri = rtrim(parse_url($uri, PHP_URL_PATH), '/') ?: '/'; // clean URI
     $method = strtoupper($method); // normalize method
@@ -112,6 +134,17 @@ class Router {
   // Getters / Setters
   // -----------------
 
+  /**
+   * Generates a full URL from a named route and parameter values.
+   *
+   * Supports associative, positional, and single-value parameter forms.
+   *
+   * @param string $name        The name of the route.
+   * @param mixed  $params      Parameters to replace in the route URI.
+   * @return string             Fully qualified URL.
+   *
+   * @throws \Exception         If route name is not found.
+   */
   public function getRouteUrl($name, $params = []) {
     foreach ($this->routes as $route) {
       if ($route['name'] === $name) {
@@ -152,6 +185,16 @@ class Router {
   // Utility & Private
   // -----------------
 
+  /**
+   * Flattens nested/grouped routes into a single-level array with inherited prefix/controller/middleware.
+   *
+   * @param array       $routes      Routes to flatten.
+   * @param string      $prefix      URI prefix to apply to all child routes.
+   * @param string|null $controller  Default controller to apply if not set.
+   * @param array       $middleware  Middleware stack to inherit.
+   *
+   * @return array                   Flat array of route definitions.
+   */
   private function flatten_routes($routes, $prefix = '', $controller = null, $middleware = []) {
     $flat = [];
   
@@ -208,6 +251,11 @@ class Router {
     return $flat;
   }
 
+  /**
+   * Renders a given error code view if available or outputs plain error message.
+   *
+   * @param int $code  HTTP status code to render (e.g. 404, 500).
+   */
   private function error($code) {
     http_response_code($code);
     if (isset($this->error_pages[$code])) {
@@ -217,6 +265,14 @@ class Router {
     }
   }
 
+  /**
+   * Validates and returns a single route definition (group or route).
+   *
+   * @param array $route  Raw route array definition.
+   * @return array        Parsed and validated route.
+   *
+   * @throws InvalidRouteDefinition
+   */
   private function parse_route(array $route){
     // Validate
 
@@ -241,6 +297,12 @@ class Router {
     return $route;
   }
 
+  /**
+   * Parses middleware parameters from colon-separated alias (e.g. "auth:role=admin").
+   *
+   * @param string $paramStr  Raw parameter string.
+   * @return array            Tuple of [args, kwargs].
+   */
   private function parse_mw_params($paramStr) {
     $args = [];
     $kwargs = [];
