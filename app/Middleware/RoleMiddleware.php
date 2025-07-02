@@ -6,13 +6,13 @@ use Core\Middleware;
 use App\Models\User;
 
 class RoleMiddleware extends Middleware {
-  public function handle($next, $role=null) {
 
+  public function handle($next, $role=null) {
 
     if ($role == 'any'){
       return $next();
     }
-    
+
     $headers = getallheaders();
     $auth = $headers['Authorization'] ?? null;
 
@@ -50,4 +50,5 @@ class RoleMiddleware extends Middleware {
 
     return $next();
   }
+  
 }

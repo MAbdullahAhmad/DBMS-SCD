@@ -8,6 +8,7 @@ spl_autoload_register(function ($class) {
   $map = [
       'Core\\' => ROOT_DIR . '/core/',
       'App\\'  => ROOT_DIR . '/app/',
+      'Routes\\'  => ROOT_DIR . '/app/routes/',
   ];
 
   foreach ($map as $prefix => $dir) {

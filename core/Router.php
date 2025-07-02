@@ -1,6 +1,9 @@
 <?php
 
 namespace Core;
+
+use Core\Exceptions\InvalidRouteDefinition;
+
 use function Core\Util\render;
 use function Core\Util\config;
 
@@ -19,7 +22,7 @@ class Router {
   // -----------
 
   public function __construct($config, $error_pages = []) {
-    $this->routes = $this->flatten($config);
+    $this->routes = $this->flatten_routes($config);
     $this->error_pages = $error_pages;
   }
   
@@ -62,7 +65,7 @@ class Router {
               $explode = explode(':', $mwDef . ':');
               [$alias, $params] = explode(':', $mwDef . ':');
               $middlewareClass = config("middleware.aliases.$alias", '');
-              [$args, $kwargs] = $this->parseMiddlewareParams($params);
+              [$args, $kwargs] = $this->parse_mw_params($params);
             } elseif (is_array($mwDef)) {
               $middlewareClass = $mwDef[0];
               $args = $mwDef['args'] ?? [];
@@ -107,11 +110,12 @@ class Router {
   // Utility
   // -------
 
-  // Flatten nested route config into a flat list of routes
-  private function flatten($routes, $prefix = '', $controller = null, $middleware = null) {
+  // flatten_routes nested route config into a flat list of routes
+  private function flatten_routes($routes, $prefix = '', $controller = null, $middleware = null) {
     $flat = [];
 
     foreach ($routes as $r) {
+      $r = $this->parse_route($r);
 
       // Group case
       if (isset($r['routes'])) {
@@ -119,8 +123,8 @@ class Router {
         $subController = $r['controller'] ?? $controller;
         $subMiddleware = $r['middleware'] ?? $middleware;
 
-        // Recursively flatten
-        $flat = array_merge($flat, $this->flatten($r['routes'], $subPrefix, $subController, $subMiddleware));
+        // Recursively flatten_routes
+        $flat = array_merge($flat, $this->flatten_routes($r['routes'], $subPrefix, $subController, $subMiddleware));
       }
 
       // Single route case
@@ -158,7 +162,26 @@ class Router {
     }
   }
 
-  private function parseMiddlewareParams($paramStr) {
+  private function parse_route(array $route){
+    // Validate
+
+    $required_fields = [
+      // key => index (null menas it cannot be defined via an index)
+      'method' => 0,
+      'uri' => 1,
+      'handler' => 2,
+      'middlewaer' => 3,
+      'name' => 4,
+      'routes' => null,
+      'prefix' => null,
+    ];
+
+    if(!(array_key_exists('method', $route) or array_key_exists(0, $route))){
+      throw new InvalidRouteDefinition("Key 'method' not found in route definition: " . json_encode($route));
+    }
+  }
+
+  private function parse_mw_params($paramStr) {
     $args = [];
     $kwargs = [];
 

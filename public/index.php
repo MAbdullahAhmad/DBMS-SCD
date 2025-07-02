@@ -7,7 +7,17 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 require ROOT_DIR . '/autoload.php';
-$routes = require_once ROOT_DIR . '/app/routes.php';
+$api_routes = require ROOT_DIR . '/app/routes/api.php';
+$web_routes = require ROOT_DIR . '/app/routes/web.php';
+
+$routes = [
+  [
+    'prefix' => '/api',
+    'group' => $api_routes,
+    'middleware' => 'api'
+  ],
+  ...$web_routes,
+];
 
 use Core\Router;
 

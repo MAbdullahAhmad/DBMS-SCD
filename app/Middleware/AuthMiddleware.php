@@ -5,6 +5,7 @@ namespace App\Middleware;
 use Core\Middleware;
 
 class AuthMiddleware extends Middleware {
+
     public function handle($next, ...$kwargs) {
         $headers = getallheaders();
         if (empty($headers['Authorization'])) {
@@ -15,4 +16,5 @@ class AuthMiddleware extends Middleware {
 
         return $next();
     }
+    
 }
