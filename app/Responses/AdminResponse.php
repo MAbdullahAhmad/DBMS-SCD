@@ -2,13 +2,16 @@
 
 namespace App\Responses;
 
+use App\Util\Auth;
 use function Core\Util\render;
 use function Core\Util\url;
 
 class AdminResponse {
   public static function view($view, $data = []) {
     $merged = array_merge([
-      'is_logged_in' => true,
+      'is_logged_in' => Auth::check(),
+      'auth_user'    => Auth::user(),
+      'auth_role'    => Auth::role(),
       'home_label'   => 'Dashboard',
       'home_url'     => url('/admin'),
       'nav' => [

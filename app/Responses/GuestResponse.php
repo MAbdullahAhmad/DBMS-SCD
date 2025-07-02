@@ -2,21 +2,25 @@
 
 namespace App\Responses;
 
+use App\Util\Auth;
 use function Core\Util\render;
 use function Core\Util\url;
-use function Core\Util\config;
 
-class GuestResponse {
+class EmployeeResponse {
   public static function view($view, $data = []) {
-    $is_logged_in = isset($_SESSION['user_id']);
-    $role = $_SESSION['role'] ?? null;
-    $home_label = $role === 'admin' ? 'Dashboard' : 'Account';
-    $home_url = url(config('user_home.' . $role, '/'));
-
     $merged = array_merge([
-      'is_logged_in' => $is_logged_in,
-      'home_label'   => $home_label,
-      'home_url'     => $home_url,
+      'is_logged_in' => Auth::check(),
+      'auth_user'    => Auth::user(),
+      'auth_role'    => Auth::role(),
+      'home_label'   => 'Account',
+      'home_url'     => url('/employee'),
+      'nav' => [
+        ['route' => 'employee.dashboard', 'label' => 'Dashboard',     'icon' => 'home'],
+        ['route' => 'employee.timeline',  'label' => 'Timeline',      'icon' => 'timeline'],
+        ['route' => 'employee.salary',    'label' => 'My Salary',     'icon' => 'receipt'],
+        ['route' => 'employee.history',   'label' => 'Payment History','icon' => 'history'],
+        ['route' => 'employee.projects',  'label' => 'Projects & Tasks','icon' => 'work'],
+      ],
     ], $data);
 
     return render($view, $merged);
