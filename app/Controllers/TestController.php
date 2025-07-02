@@ -1,17 +1,18 @@
 <?php
 
 namespace App\Controllers;
+
 use Core\Controller;
-use function Core\Util\render;
+use function Core\Util\json;
 
-class HomeController extends Controller {
+class TestController extends Controller {
 
-  public function index($id) {
+  public function show_id($id) {
 
     // Render View with 'message' variable
-    return [
+    return json([
       'id' => $id,
-    ];
+    ]);
     
   }
 
