@@ -5,7 +5,9 @@ namespace App\Middleware;
 use Core\Middleware;
 use App\Models\Admin;
 use App\Models\Employee;
+
 use function Core\Util\redirect;
+use function Core\Util\config;
 
 /*
  * RoleMiddleware checks if the user has the required role to access a route.
@@ -22,10 +24,11 @@ class RoleMiddleware extends Middleware {
    * Role-specific home pages.
    * @var array
    */
-  protected static $homepages = [
-    'admin'    => '/admin',
-    'employee' => '/employee',
-  ];
+  protected $homepages = [];
+
+  public function __construct(){
+    $this->homepages = config('user_homepages');
+  }
 
   public function handle($next, $role = 'any') {
     $userId = $_SESSION['user_id'] ?? null;
@@ -70,6 +73,12 @@ class RoleMiddleware extends Middleware {
       echo "Forbidden: Access denied for role '{$role}'.";
       return;
     }
+
+    // global $auth;
+    // $auth = [
+    //   'user' => $user,
+    //   'role' => $sessionRole,
+    // ];
 
     return $next();
   }

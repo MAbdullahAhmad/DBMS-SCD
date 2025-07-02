@@ -1,4 +1,4 @@
-@layout('layouts.guest')
+@layout('layouts.admin')
 
 @section('title')
   Dashboard

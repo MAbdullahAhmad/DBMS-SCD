@@ -11,7 +11,7 @@ function config($key, $default = null) {
   $segments = explode('.', $key);
   foreach ($segments as $segment) {
     if (!is_array($result) || !array_key_exists($segment, $result)) {
-        return $default;
+      return $default;
     }
     $result = $result[$segment];
   }

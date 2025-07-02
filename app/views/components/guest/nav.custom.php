@@ -44,7 +44,18 @@
 
               <!-- Login -->
               <li class="nav-item my-auto ms-3 ms-lg-0">
-                <a href="@route('test.id', 31)" class="btn  bg-gradient-dark  mb-0 mt-2 mt-md-0">Login</a>
+                <!-- Check if logged in -->
+                 <?php
+                  if(isset($is_logged_in) && $is_logged_in) {
+                    ?>
+                      <a href="{{ $home_url ?? '' }}" class="btn  bg-gradient-dark  mb-0 mt-2 mt-md-0">{{ $home_label ?? '' }}</a>
+                      <?php
+                  } else {
+                    ?>
+                      <a href="@route('test.id', 31)" class="btn  bg-gradient-dark  mb-0 mt-2 mt-md-0">Login</a>
+                    <?php
+                  }
+                 ?>
               </li>
             </ul>
           </div>
