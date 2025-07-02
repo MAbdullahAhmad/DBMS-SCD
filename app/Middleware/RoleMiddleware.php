@@ -27,7 +27,7 @@ class RoleMiddleware extends Middleware {
   protected $homepages = [];
 
   public function __construct(){
-    $this->homepages = config('user_homepages');
+    $this->homepages = config('user_home');
   }
 
   public function handle($next, $role = 'any') {
@@ -36,8 +36,8 @@ class RoleMiddleware extends Middleware {
 
     // Guest only
     if ($role === 'guest') {
-      if ($userId && $sessionRole && isset(self::$homepages[$sessionRole])) {
-        return redirect(self::$homepages[$sessionRole]);
+      if ($userId && $sessionRole && isset($this->homepages[$sessionRole])) {
+        return redirect($this->homepages[$sessionRole]);
       }
       return $next();
     }

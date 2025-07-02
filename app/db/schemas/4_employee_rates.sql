@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS sc_employee_rates (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  employee_id INT NOT NULL,  -- FK to sc_employees(id)
+  office_hour_rate DECIMAL(10,2) NOT NULL,
+  wfh_hour_rate DECIMAL(10,2) NOT NULL,
+  effective_from DATE NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

@@ -11,6 +11,7 @@ use App\Controllers\TestController;
 // | METHOD | PATH | CONTROLLER | METHOD | [MIDDLEWARE] |
 // ``````````````````````````````````````````````````````
 
+
 return [
 
   // Guest Routes
@@ -27,8 +28,18 @@ return [
   [
     'prefix' => '/admin',
     'middleware' => 'role:admin',
+    'name' => 'admin.',
     'group' => require __DIR__ . '/admin.php',
   ],
 
+  // Employee Routes
+  [
+    'prefix' => '/employee',
+    'middleware' => 'role:employee',
+    'name' => 'employee.',
+    'group' => require __DIR__ . '/employee.php',
+  ],
+
+  // @debug
   ['GET', '/test/{{id}}', TestController::class . '@show_id', 'name' => 'test.id'],
 ];
