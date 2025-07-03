@@ -32,7 +32,7 @@ class AuthController extends Controller {
       return redirect('/admin');
     }
 
-    $employee = (new Employee())->find_by_email($username);
+    $employee = (new Employee())->match($username, $password);
     if ($employee) {
       $_SESSION['user_id'] = $employee['id'];
       $_SESSION['role'] = 'employee';

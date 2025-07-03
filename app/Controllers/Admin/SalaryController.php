@@ -25,6 +25,17 @@ class SalaryController {
       ORDER BY s.employee_id
     ", [$month, $year]);
 
+    // $salaries = $db->fetchAll("
+    //   SELECT s.*, u.full_name, u.email,
+    //     (SELECT SUM(amount) FROM sc_salary_adjustments WHERE salary_id = s.id AND category = 'bonus') AS bonus
+    //   FROM sc_salaries s
+    //   JOIN sc_employees e ON e.id = s.employee_id
+    //   JOIN users u ON u.id = e.cattr_user_id
+    //   WHERE s.month = ? AND s.year = ?
+    //   ORDER BY s.employee_id
+    // ", [$month, $year]);
+
+
     $employees = $db->fetchAll("
       SELECT e.id, u.full_name, u.email 
       FROM sc_employees e

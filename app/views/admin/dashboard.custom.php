@@ -13,37 +13,6 @@
   </div>
 </div>
 
-<!-- <div class="d-flex justify-content-end mb-4">
-  <form method="get" class="d-flex align-items-end gap-3 px-1">
-    <div>
-      <label for="month" class="form-label">Month</label>
-      <select class="form-control" id="month" name="month">
-        <?php for ($m = 1; $m <= 12; $m++): ?>
-          <option value="<?= $m ?>" <?= $m == (int)($_GET['month'] ?? date('n')) ? 'selected' : '' ?>>
-            <?= date('F', mktime(0, 0, 0, $m, 1)) ?>
-          </option>
-        <?php endfor; ?>
-      </select>
-    </div>
-
-    <div>
-      <label for="year" class="form-label">Year</label>
-      <select class="form-control" id="year" name="year">
-        <?php for ($y = date('Y') - 2; $y <= date('Y') + 1; $y++): ?>
-          <option value="<?= $y ?>" <?= $y == (int)($_GET['year'] ?? date('Y')) ? 'selected' : '' ?>>
-            <?= $y ?>
-          </option>
-        <?php endfor; ?>
-      </select>
-    </div>
-
-    <div>
-      <button type="submit" class="btn btn-primary">Apply</button>
-    </div>
-  </form>
-</div> -->
-
-
 <!-- Cards -->
 <div class="row mb-4">
   <div class="col-md-6">
