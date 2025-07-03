@@ -52,7 +52,7 @@
                       <?php
                   } else {
                     ?>
-                      <a href="@route('test.id', 31)" class="btn  bg-gradient-dark  mb-0 mt-2 mt-md-0">Login</a>
+                      <a href="@route('auth.login.form')" class="btn  bg-gradient-dark  mb-0 mt-2 mt-md-0">Login</a>
                     <?php
                   }
                  ?>

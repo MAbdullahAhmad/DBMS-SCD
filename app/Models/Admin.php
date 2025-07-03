@@ -24,5 +24,18 @@ class Admin extends Model {
       [$username, $hash]
     );
   }
+  public function existsByUsername($username, $excludeId = null) {
+    $sql = "SELECT COUNT(*) as count FROM {$this->table} WHERE username = ?";
+    $params = [$username];
+  
+    if ($excludeId !== null) {
+      $sql .= " AND id != ?";
+      $params[] = $excludeId;
+    }
+  
+    $result = $this->db->fetch($sql, $params);
+    return $result['count'] > 0;
+  }
+  
   
 }
